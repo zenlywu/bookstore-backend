@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 @Component
@@ -49,7 +50,17 @@ public class JwtFilter extends OncePerRequestFilter {
             Claims claims = jwtUtil.extractAllClaims(token);
             String username = claims.getSubject();
             String role = claims.get("role", String.class);
+            Date expirationDate = claims.getExpiration();
 
+            System.out.println("✅ [DEBUG] 解析的 Token - username: " + username);
+            System.out.println("✅ [DEBUG] 解析的 Token - role: " + role);
+            System.out.println("✅ [DEBUG] 解析的 Token - 過期時間: " + expirationDate);
+
+    if (jwtUtil.isTokenExpired(token)) {
+        System.out.println("❌ [ERROR] Token 已過期！");
+        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Token 已過期，請重新登入");
+        return;
+    }
             UsernamePasswordAuthenticationToken authenticationToken =
                     new UsernamePasswordAuthenticationToken(username, null, List.of(new SimpleGrantedAuthority(role)));
 

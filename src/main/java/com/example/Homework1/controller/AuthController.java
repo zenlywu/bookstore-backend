@@ -8,6 +8,7 @@ import com.example.Homework1.entity.Role;
 import com.example.Homework1.service.UserService;
 import com.example.Homework1.utils.JwtUtil;
 import com.example.Homework1.service.JwtBlacklistService;
+import com.example.Homework1.service.PasswordResetService;
 
 import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,6 +32,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final JwtBlacklistService blacklistService; // ✅ 確保這行存在
+    private final PasswordResetService passwordResetService;
 
     //註冊 API（所有人都可用，預設角色為 EMPLOYEE）
     @Operation(summary = "註冊(初始角色為 EMPLOYEE)")
@@ -114,24 +116,20 @@ public class AuthController {
             return ResponseEntity.status(403).body(new AuthResponse(null, "無效的 Token"));
         }
     }
-    @Operation(summary = "忘記密碼，重設密碼")
+    @Operation(summary = "請求忘記密碼（不使用 Email）")
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String requestUsername = authentication.getName(); //取得當前登入的使用者
+    public ResponseEntity<String> forgotPassword(@RequestParam String username) {
+        String token = passwordResetService.generateResetToken(username);
+        return ResponseEntity.ok("請使用此 Token 來重設密碼：" + token);
+    }
 
-        //只能修改自己的密碼
-        if (!requestUsername.equals(request.getUsername())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("您無法更改其他使用者的密碼");
+    @Operation(summary = "重設密碼")
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
+        boolean success = passwordResetService.resetPassword(token, newPassword);
+        if (success) {
+            return ResponseEntity.ok("密碼重置成功！");
         }
-
-        try {
-            userService.resetPassword(request.getUsername(), request.getNewPassword());
-            return ResponseEntity.ok("密碼已成功重設");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("找不到該用戶");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("發生錯誤：" + e.getMessage());
-        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("無效的 Token 或使用者");
     }
 }
