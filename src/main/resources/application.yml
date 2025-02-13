@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://localhost:3306/bookstore
+    username: root
+    password: 123
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.MariaDBDialect  
+    hibernate:
+      ddl-auto: update  
+    show-sql: true  
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 6000ms  # 連線超時時間
+      lettuce:
+        pool:
+          enabled: true
+          max-active: 8   # 最大連線數
+          max-idle: 8     # 最大閒置連線數
+          min-idle: 0     # 最小閒置連線數
+          max-wait: -1ms  # 最大等待時間
+server:
+  port: 8080
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
