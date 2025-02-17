@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -46,33 +47,42 @@ public class JwtFilter extends OncePerRequestFilter {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "Token 已失效，請重新登入");
                 return;
             }
-
+        
             Claims claims = jwtUtil.extractAllClaims(token);
             String username = claims.getSubject();
             String role = claims.get("role", String.class);
             Date expirationDate = claims.getExpiration();
-
+            
+            System.out.println("✅ [DEBUG] 解析的 Token：" + token);
             System.out.println("✅ [DEBUG] 解析的 Token - username: " + username);
             System.out.println("✅ [DEBUG] 解析的 Token - role: " + role);
             System.out.println("✅ [DEBUG] 解析的 Token - 過期時間: " + expirationDate);
+            
 
-    if (jwtUtil.isTokenExpired(token)) {
-        System.out.println("❌ [ERROR] Token 已過期！");
-        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Token 已過期，請重新登入");
-        return;
-    }
+            if (jwtUtil.isTokenExpired(token)) {
+                System.out.println("❌ [ERROR] Token 已過期！");
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Token 已過期，請重新登入");
+                return;
+            }
+        
+            // ✅ 確保 `SecurityContextHolder` 正確設定
             UsernamePasswordAuthenticationToken authenticationToken =
                     new UsernamePasswordAuthenticationToken(username, null, List.of(new SimpleGrantedAuthority(role)));
-
+        
             authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(authenticationToken);
+            SecurityContextHolder.setContext(context); // ✅ 設置 SecurityContextHolder
 
-            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            System.out.println("✅ [DEBUG] SecurityContextHolder 設定後: " + SecurityContextHolder.getContext().getAuthentication());
+
+        
         } catch (Exception e) {
             System.out.println("❌ JwtFilter - 無效的 Token：" + e.getMessage());
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "無效的 Token");
             return;
         }
-
         chain.doFilter(request, response);
     }
 }

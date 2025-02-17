@@ -46,7 +46,7 @@ public class AuthController {
         // 建立用戶，預設為 EMPLOYEE
         User user = User.builder()
                 .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword())) // 密碼加密
+                .password(request.getPassword()) // 密碼加密
                 .role(Role.EMPLOYEE) // 只能註冊 EMPLOYEE
                 .fullname(request.getFullname())
                 .phone(request.getPhone())

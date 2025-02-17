@@ -23,7 +23,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter; // JWT 過濾器
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -43,7 +42,7 @@ public class SecurityConfig {
                 .requestMatchers("POST", "/api/books/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
                 .requestMatchers("PUT", "/api/books/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
                 .requestMatchers("DELETE", "/api/books/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
-                .requestMatchers("GET", "/api/books/**").authenticated() // 任何登入用戶都可以讀取書籍
+                .requestMatchers("GET", "/api/books/**").permitAll()
 
                 .requestMatchers("/**").permitAll() //允許所有請求，包含 `OPTIONS`
 
@@ -51,6 +50,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class); //在驗證之前加入 JWT 過濾器
+            System.out.println("✅ [DEBUG] SecurityConfig 已載入，權限配置完成");
 
         return http.build();
     }

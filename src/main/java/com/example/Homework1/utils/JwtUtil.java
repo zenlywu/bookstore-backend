@@ -23,12 +23,24 @@ public class JwtUtil {
     public String generateToken(String username, String role) {
         return Jwts.builder()
                 .subject(username)
-                .claim("role", role)
+                .claim("role",role)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(key)
                 .compact();
     }
+
+    // 生成一個立即過期的 Token（測試用）
+    public String generateExpiredToken() {
+        return Jwts.builder()
+                .subject("testUser")
+                .claim("role", "ADMIN")
+                .issuedAt(new Date(System.currentTimeMillis() - 10000)) // 讓 Token 立即過期
+                .expiration(new Date(System.currentTimeMillis() - 5000))
+                .signWith(key)
+                .compact();
+    }
+    
 
     // 解析所有 Claims
     public Claims extractAllClaims(String token) {
@@ -61,6 +73,9 @@ public class JwtUtil {
     }
     public Date extractExpiration(String token) {
         return extractAllClaims(token).getExpiration();
+    }
+    public Key getKey() {
+        return this.key;
     }
     
 }
