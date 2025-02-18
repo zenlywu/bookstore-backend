@@ -14,11 +14,18 @@ public class JwtBlacklistService {
 
     // ✅ 把 Token 加入 Redis 黑名單
     public void addToBlacklist(String token, long expirationMillis) {
-        redisTemplate.opsForValue().set(BLACKLIST_PREFIX + token, "true", expirationMillis, TimeUnit.MILLISECONDS);
+        redisTemplate.opsForValue().set(BLACKLIST_PREFIX + token, "true", expirationMillis, TimeUnit.SECONDS);
     }
 
     // ✅ 檢查 Token 是否在黑名單內
     public boolean isBlacklisted(String token) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(BLACKLIST_PREFIX + token));
+        String result = redisTemplate.opsForValue().get("blacklist:" + token);
+        return "true".equals(result);
+    }
+    
+    
+    // ✅ 刪除 Redis 黑名單中的 Token
+    public void removeFromBlacklist(String token) {
+        redisTemplate.delete(BLACKLIST_PREFIX + token);
     }
 }

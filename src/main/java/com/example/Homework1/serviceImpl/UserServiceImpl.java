@@ -40,12 +40,18 @@ public class UserServiceImpl implements UserService {
         if (requestRole.equals("HR_MANAGER") && !user.getRole().equals(Role.EMPLOYEE)) {
             throw new SecurityException("HR_MANAGER 只能創建 EMPLOYEE，不能創建 ADMIN 或 HR_MANAGER");
         }
-
+    
+        // 🔥 **修正 `findByUsername()` 判斷，確保不會 `null`**
+        if (userRepository.findByUsername(user.getUsername()) != null) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+    
         // ✅ 確保密碼加密
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepository.save(user);
         return convertToDto(savedUser);
     }
+    
 
 
     @Override
@@ -91,15 +97,19 @@ public class UserServiceImpl implements UserService {
     }
 
     private UserDto convertToDto(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("無法轉換 User，因為它是 null");
+        }
         return UserDto.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .fullname(user.getFullname() != null ? user.getFullname() : "N/A")  // 避免 null
+                .id(user.getId() != null ? user.getId() : 0L) // 避免 NullPointerException
+                .username(user.getUsername() != null ? user.getUsername() : "未知")
+                .fullname(user.getFullname() != null ? user.getFullname() : "N/A")  
                 .phone(user.getPhone() != null ? user.getPhone() : "N/A")
                 .email(user.getEmail() != null ? user.getEmail() : "N/A")
                 .role(user.getRole() != null ? user.getRole() : Role.EMPLOYEE)  // 預設為 EMPLOYEE
                 .build();
     }
+    
 
     @Override
     public List<UserDto> getUsersByRole(String role) {

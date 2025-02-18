@@ -1,7 +1,6 @@
 package com.example.Homework1.utils;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ClaimsBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -43,8 +42,10 @@ public class JwtUtil {
     
 
     // 解析所有 Claims
+    @SuppressWarnings("deprecation")
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
+                .setAllowedClockSkewSeconds(60) // ✅ 允許 60 秒時間誤差
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)

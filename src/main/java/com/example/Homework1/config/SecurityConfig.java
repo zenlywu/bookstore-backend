@@ -3,6 +3,7 @@ package com.example.Homework1.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -30,19 +31,19 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // 允許未登入用戶訪問 `register`、`login`、`refresh-token`
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh-token","/api/auth/forgot-password").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh-token","/api/auth/forgot-password").permitAll()
                 // `ADMIN` 可以管理 `HR_MANAGER` 和 `EMPLOYEE`
-                .requestMatchers("POST", "/api/users/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
-                .requestMatchers("PUT", "/api/users/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
-                .requestMatchers("DELETE", "/api/users/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
-                .requestMatchers("GET", "/api/users/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
+                .requestMatchers(HttpMethod.POST, "/api/users/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
+                .requestMatchers(HttpMethod.PUT, "/api/users/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
+                .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
+                .requestMatchers(HttpMethod.GET, "/api/users/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
 
                 // `books` API：`ADMIN` 和 `HR_MANAGER` 可以 CRUD，`EMPLOYEE` 只能讀取
-                .requestMatchers("POST", "/api/books/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
-                .requestMatchers("PUT", "/api/books/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
-                .requestMatchers("DELETE", "/api/books/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
-                .requestMatchers("GET", "/api/books/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/books/**").hasAnyAuthority("ADMIN", "HR_MANAGER","EMPLOYEE")
+                .requestMatchers(HttpMethod.PUT, "/api/books/**").hasAnyAuthority("ADMIN", "HR_MANAGER","EMPLOYEE")
+                .requestMatchers(HttpMethod.DELETE, "/api/books/**").hasAnyAuthority("ADMIN", "HR_MANAGER","EMPLOYEE")
+                .requestMatchers(HttpMethod.GET, "/api/books/**").hasAnyAuthority("ADMIN", "HR_MANAGER", "EMPLOYEE")
 
                 .requestMatchers("/**").permitAll() //允許所有請求，包含 `OPTIONS`
 
@@ -71,14 +72,11 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:8080") // ✅ 允許 `Swagger UI` 端口
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .allowedHeaders("Authorization", "Content-Type")
-                        .exposedHeaders("Authorization") // ✅ 讓前端能讀取 `Authorization Header`
-                        .allowCredentials(true); // ✅ 設定為 `true` 時，不能與 `"*"` 共存
+                        .allowedOrigins("*")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE")
+                        .allowedHeaders("*");
             }
         };
     }
-    
 }
 

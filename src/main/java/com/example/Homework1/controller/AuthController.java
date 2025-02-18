@@ -17,8 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,24 +41,25 @@ public class AuthController {
         if (request.getUsername() == null || request.getPassword() == null) {
             return ResponseEntity.badRequest().body("Username and password are required.");
         }
-
+    
         // 建立用戶，預設為 EMPLOYEE
         User user = User.builder()
                 .username(request.getUsername())
-                .password(request.getPassword()) // 密碼加密
-                .role(Role.EMPLOYEE) // 只能註冊 EMPLOYEE
+                .password(passwordEncoder.encode(request.getPassword())) // ✅ 確保密碼加密
+                .role(Role.EMPLOYEE) 
                 .fullname(request.getFullname())
                 .phone(request.getPhone())
                 .email(request.getEmail())
                 .build();
-
+    
         try {
-            userService.saveUser(user,"EMPLOYEE");
+            userService.saveUser(user, "EMPLOYEE");
             return ResponseEntity.ok("註冊成功！");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating user: " + e.getMessage());
         }
     }
+    
 
     //登入 API（回傳 JWT Token）
     @Operation(summary = "登入") 
@@ -71,10 +71,16 @@ public class AuthController {
             return ResponseEntity.status(401).body(new AuthResponse(null, "帳號或密碼錯誤！"));
         }
 
+        // 🔥 **修正：確保 `user.getRole()` 不為 null**
+        if (user.getRole() == null) {
+            return ResponseEntity.status(500).body(new AuthResponse(null, "用戶角色錯誤！"));
+        }
+
         // 生成 JWT Token
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
         return ResponseEntity.ok(new AuthResponse(token, "登入成功！"));
     }
+
     
     @Operation(summary = "登出並讓 Token 失效")
     @PostMapping("/logout")

@@ -1,6 +1,5 @@
 package com.example.Homework1.controller;
 
-import com.example.Homework1.dto.ForgotPasswordRequest;
 import com.example.Homework1.dto.UserDto;
 import com.example.Homework1.entity.User;
 import com.example.Homework1.entity.Role;
@@ -16,7 +15,6 @@ import java.util.Optional;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
