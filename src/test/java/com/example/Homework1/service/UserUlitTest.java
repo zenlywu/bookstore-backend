@@ -21,7 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-class UserServiceTest {
+class UserUlitTest {
 
     @Mock
     private UserRepository userRepository;
@@ -33,8 +33,6 @@ class UserServiceTest {
     private UserServiceImpl userService;
 
     private User testUser;
-    private UserDto testUserDto;
-
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);

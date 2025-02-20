@@ -2,7 +2,7 @@ package com.example.Homework1.controller;
 
 import com.example.Homework1.dto.AuthRequest;
 import com.example.Homework1.dto.AuthResponse;
-import com.example.Homework1.dto.ForgotPasswordRequest;
+import com.example.Homework1.dto.UserDto;
 import com.example.Homework1.entity.User;
 import com.example.Homework1.entity.Role;
 import com.example.Homework1.service.UserService;
@@ -13,7 +13,6 @@ import com.example.Homework1.service.PasswordResetService;
 import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +29,7 @@ public class AuthController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
-    private final JwtBlacklistService blacklistService; // ✅ 確保這行存在
+    private final JwtBlacklistService blacklistService; 
     private final PasswordResetService passwordResetService;
 
     //註冊 API（所有人都可用，預設角色為 EMPLOYEE）
@@ -41,25 +40,34 @@ public class AuthController {
         if (request.getUsername() == null || request.getPassword() == null) {
             return ResponseEntity.badRequest().body("Username and password are required.");
         }
-    
+
+        // 🔥 **檢查用戶是否已存在**
+        if (userService.findByUsername(request.getUsername()) != null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Username already exists");
+        }
+
         // 建立用戶，預設為 EMPLOYEE
-        User user = User.builder()
-                .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword())) // ✅ 確保密碼加密
-                .role(Role.EMPLOYEE) 
-                .fullname(request.getFullname())
-                .phone(request.getPhone())
-                .email(request.getEmail())
-                .build();
-    
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(request.getPassword());
+        user.setFullname(request.getFullname());
+        user.setPhone(request.getPhone());
+        user.setEmail(request.getEmail());
+        user.setRole(Role.EMPLOYEE);
         try {
-            userService.saveUser(user, "EMPLOYEE");
-            return ResponseEntity.ok("註冊成功！");
+            // ✅ `saveUser()` 回傳 `UserDto`
+            UserDto savedUser = userService.saveUser(user, "EMPLOYEE");
+
+            if (savedUser != null) {
+                return ResponseEntity.ok("註冊成功！");
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("註冊失敗");
+            }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating user: " + e.getMessage());
         }
     }
-    
+
 
     //登入 API（回傳 JWT Token）
     @Operation(summary = "登入") 
@@ -84,14 +92,14 @@ public class AuthController {
     
     @Operation(summary = "登出並讓 Token 失效")
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<String> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.badRequest().body("缺少有效的 Token");
         }
-
+        
         String token = authHeader.substring(7);
         long expirationMillis = jwtUtil.extractExpiration(token).getTime() - System.currentTimeMillis();
-
+        
         blacklistService.addToBlacklist(token, expirationMillis);
         return ResponseEntity.ok("登出成功，Token 已失效");
     }
@@ -122,6 +130,7 @@ public class AuthController {
             return ResponseEntity.status(403).body(new AuthResponse(null, "無效的 Token"));
         }
     }
+
     @Operation(summary = "請求忘記密碼（不使用 Email）")
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestParam String username) {

@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-class BookServiceTest {
+class BookUlitTest {
 
     @Mock
     private BookRepository bookRepository;  // 🔥 Mock `BookRepository`

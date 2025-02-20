@@ -32,7 +32,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 允許未登入用戶訪問 `register`、`login`、`refresh-token`
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh-token","/api/auth/forgot-password").permitAll()
+                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh-token","/api/auth/forgot-password","/api/auth/logout").permitAll()
                 // `ADMIN` 可以管理 `HR_MANAGER` 和 `EMPLOYEE`
                 .requestMatchers(HttpMethod.POST, "/api/users/**").hasAnyAuthority("ADMIN", "HR_MANAGER")
                 .requestMatchers(HttpMethod.PUT, "/api/users/**").hasAnyAuthority("ADMIN", "HR_MANAGER")

@@ -28,61 +28,65 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtBlacklistService blacklistService; // 新增黑名單檢查
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-            throws ServletException, IOException {
+protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+        throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        String token = authHeader.substring(7);
-
-        try {
-            // ✅ 檢查 Token 是否在黑名單內
-            if (blacklistService.isBlacklisted(token)) {
-                System.out.println("❌ JwtFilter - Token 在黑名單內，拒絕存取！");
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Token 已失效，請重新登入");
-                return;
-            }
-        
-            Claims claims = jwtUtil.extractAllClaims(token);
-            String username = claims.getSubject();
-            String role = claims.get("role", String.class);
-            Date expirationDate = claims.getExpiration();
-            
-            System.out.println("✅ [DEBUG] 解析的 Token：" + token);
-            System.out.println("✅ [DEBUG] 解析的 Token - username: " + username);
-            System.out.println("✅ [DEBUG] 解析的 Token - role: " + role);
-            System.out.println("✅ [DEBUG] 解析的 Token - 過期時間: " + expirationDate);
-            
-
-            if (jwtUtil.isTokenExpired(token)) {
-                System.out.println("❌ [ERROR] Token 已過期！");
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Token 已過期，請重新登入");
-                return;
-            }
-        
-            // ✅ 確保 `SecurityContextHolder` 正確設定
-            UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(username, null, List.of(new SimpleGrantedAuthority(role)));
-        
-            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-        
-            SecurityContext context = SecurityContextHolder.createEmptyContext();
-            context.setAuthentication(authenticationToken);
-            SecurityContextHolder.setContext(context); // ✅ 設置 SecurityContextHolder
-
-            System.out.println("✅ [DEBUG] SecurityContextHolder 設定後: " + SecurityContextHolder.getContext().getAuthentication());
-
-        
-        } catch (Exception e) {
-            System.out.println("❌ JwtFilter - 無效的 Token：" + e.getMessage());
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "無效的 Token");
-            return;
-        }
+    // 當請求為登出 API 時，直接繞過 JWT 驗證
+    String requestURI = request.getRequestURI();
+    if (requestURI.startsWith("/api/auth/logout")) {
         chain.doFilter(request, response);
+        return;
     }
+
+    final String authHeader = request.getHeader("Authorization");
+
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        chain.doFilter(request, response);
+        return;
+    }
+
+    String token = authHeader.substring(7);
+
+    try {
+        // 檢查 Token 是否在黑名單內
+        if (blacklistService.isBlacklisted(token)) {
+            System.out.println("❌ JwtFilter - Token 在黑名單內，拒絕存取！");
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Token 已失效，請重新登入");
+            return;
+        }
+
+        Claims claims = jwtUtil.extractAllClaims(token);
+        String username = claims.getSubject();
+        String role = claims.get("role", String.class);
+        Date expirationDate = claims.getExpiration();
+
+        System.out.println("✅ [DEBUG] 解析的 Token：" + token);
+        System.out.println("✅ [DEBUG] 解析的 Token - username: " + username);
+        System.out.println("✅ [DEBUG] 解析的 Token - role: " + role);
+        System.out.println("✅ [DEBUG] 解析的 Token - 過期時間: " + expirationDate);
+
+        if (jwtUtil.isTokenExpired(token)) {
+            System.out.println("❌ [ERROR] Token 已過期！");
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Token 已過期，請重新登入");
+            return;
+        }
+
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(username, null, List.of(new SimpleGrantedAuthority(role)));
+
+        authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authenticationToken);
+        SecurityContextHolder.setContext(context);
+
+        System.out.println("✅ [DEBUG] SecurityContextHolder 設定後: " + SecurityContextHolder.getContext().getAuthentication());
+
+    } catch (Exception e) {
+        System.out.println("❌ JwtFilter - 無效的 Token：" + e.getMessage());
+        response.sendError(HttpServletResponse.SC_FORBIDDEN, "無效的 Token");
+        return;
+    }
+    chain.doFilter(request, response);
+}
 }

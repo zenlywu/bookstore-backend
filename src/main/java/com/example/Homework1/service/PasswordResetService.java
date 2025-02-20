@@ -3,10 +3,7 @@ package com.example.Homework1.service;
 import com.example.Homework1.entity.Role;
 import com.example.Homework1.entity.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service; 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -17,8 +14,6 @@ public class PasswordResetService {
 
     private final StringRedisTemplate redisTemplate;
     private final UserService userService;
-    private final PasswordEncoder passwordEncoder;
-
     private static final long EXPIRATION_TIME = 15 * 60; // 15 分鐘
 
     // 🔹 產生重置 Token 並存入 Redis

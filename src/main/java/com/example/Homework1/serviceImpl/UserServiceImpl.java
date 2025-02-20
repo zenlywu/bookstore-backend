@@ -37,6 +37,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto saveUser(User user, String requestRole) {
         // ✅ `HR_MANAGER` 只能新增 `EMPLOYEE`
+        
         if (requestRole.equals("HR_MANAGER") && !user.getRole().equals(Role.EMPLOYEE)) {
             throw new SecurityException("HR_MANAGER 只能創建 EMPLOYEE，不能創建 ADMIN 或 HR_MANAGER");
         }
