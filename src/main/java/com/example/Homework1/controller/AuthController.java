@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Auth-Controller",description = "註冊員工")
@@ -35,6 +36,7 @@ public class AuthController {
     //註冊 API（所有人都可用，預設角色為 EMPLOYEE）
     @Operation(summary = "註冊(初始角色為 EMPLOYEE)")
     @PostMapping("/register")
+    @Transactional
     public ResponseEntity<String> register(@RequestBody AuthRequest request) {
         // 檢查基本資料
         if (request.getUsername() == null || request.getPassword() == null) {

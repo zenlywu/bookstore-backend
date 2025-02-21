@@ -1,0 +1,59 @@
+services:
+  db:
+    image: mariadb:10.5
+    container_name: db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: 123
+      MARIADB_DATABASE: bookstore
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 123
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "no"  # 防止 MariaDB 使用空密碼
+    ports:
+      - "3306:3306"
+    networks:
+      - mynetwork
+    volumes:
+      - mariadb_data:/var/lib/mysql  # 🔹 將 Volume 掛載到 MariaDB 的資料目錄
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - mynetwork
+
+  app:
+    image: myapp/homework1:latest
+    container_name: myapp-container
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/bookstore
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8080:8080"
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+
+volumes:
+  mariadb_data:  # 🔹 定義 MariaDB 資料存放的 Volume
+
